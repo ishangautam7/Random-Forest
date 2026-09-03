@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from numbers import Integral, Real
+from numbers import Integral
 
 import numpy as np
 
-from .tree import DecisionTreeClassifier, MaxFeatures, _validate_training_data
+from .tree import DecisionTreeClassifier, MaxFeatures
 
 
 class RandomForestClassifier:
@@ -21,11 +21,6 @@ class RandomForestClassifier:
         oob_score: bool = True,
         random_state: int | None = None,
     ) -> None:
-        if not isinstance(n_estimators, Integral) or n_estimators < 1:
-            raise ValueError("n_estimators must be a positive integer")
-        if oob_score and not bootstrap:
-            raise ValueError("oob_score requires bootstrap=True")
-
         self.n_estimators = int(n_estimators)
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
@@ -37,7 +32,8 @@ class RandomForestClassifier:
         self.random_state = random_state
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> RandomForestClassifier:
-        X_array, y_array = _validate_training_data(X, y)
+        X_array = np.asarray(X, dtype=float)
+        y_array = np.asarray(y)
         self.classes_, y_encoded = np.unique(y_array, return_inverse=True)
         self.n_classes_ = len(self.classes_)
         self.n_features_in_ = X_array.shape[1]
@@ -113,25 +109,10 @@ class RandomForestClassifier:
         return votes / self.n_estimators
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        y_array = np.asarray(y)
-        predictions = self.predict(X)
-        if y_array.ndim != 1 or len(y_array) != len(predictions):
-            raise ValueError("y must be one-dimensional and match X's row count")
-        return float(np.mean(predictions == y_array))
+        return float(np.mean(self.predict(X) == np.asarray(y)))
 
     def _collect_votes(self, X: np.ndarray) -> np.ndarray:
-        if not hasattr(self, "estimators_"):
-            raise RuntimeError("This RandomForestClassifier has not been fitted")
         X_array = np.asarray(X, dtype=float)
-        if X_array.ndim != 2:
-            raise ValueError("X must be a two-dimensional array")
-        if X_array.shape[1] != self.n_features_in_:
-            raise ValueError(
-                f"X has {X_array.shape[1]} features; expected {self.n_features_in_}"
-            )
-        if not np.all(np.isfinite(X_array)):
-            raise ValueError("X must contain only finite values")
-
         votes = np.zeros((len(X_array), self.n_classes_), dtype=np.int64)
         row_indices = np.arange(len(X_array))
         for tree in self.estimators_:
@@ -142,12 +123,6 @@ class RandomForestClassifier:
     def _resolve_sample_size(self, n_samples: int) -> int:
         if self.max_samples is None:
             return n_samples
-        if isinstance(self.max_samples, Integral) and not isinstance(self.max_samples, bool):
-            if not 1 <= int(self.max_samples) <= n_samples:
-                raise ValueError(f"integer max_samples must be in [1, {n_samples}]")
+        if isinstance(self.max_samples, Integral):
             return int(self.max_samples)
-        if isinstance(self.max_samples, Real) and not isinstance(self.max_samples, bool):
-            if not 0 < float(self.max_samples) <= 1:
-                raise ValueError("float max_samples must be in (0, 1]")
-            return max(1, int(round(float(self.max_samples) * n_samples)))
-        raise ValueError("max_samples must be None, an int, or a float")
+        return max(1, round(self.max_samples * n_samples))
