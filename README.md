@@ -63,17 +63,11 @@ Training creates:
 - `artifacts/evaluation.png` — multiclass confusion matrix and feature importance
 - `artifacts/model.pkl` — the trained Random Forest
 
-Classify one wine after training. This example is the first UCI row, whose
-actual sensory quality is 5 (the target is intentionally not passed in):
+Classify one wine after training. The script labels each of the 11 measurements
+and shows its dataset range:
 
 ```bash
-python predict.py 7.4 0.7 0 1.9 0.076 11 34 0.9978 3.51 0.56 9.4
-```
-
-Run the automated tests:
-
-```bash
-pytest
+python predict.py
 ```
 
 ## Why this version is less overfit
@@ -123,7 +117,6 @@ random-forest/
 │   ├── metrics.py                # multiclass evaluation
 │   └── tree.py                   # CART decision tree
 ├── scripts/download_data.py
-├── tests/
 ├── train.py                      # training/evaluation pipeline
 └── predict.py                    # one-row prediction demo
 ```

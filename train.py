@@ -1,5 +1,3 @@
-"""Train and evaluate the from-scratch Random Forest on UCI red-wine data."""
-
 from __future__ import annotations
 
 import argparse
@@ -56,8 +54,6 @@ def create_evaluation_plot(
     importances: np.ndarray,
     output_path: Path,
 ) -> None:
-    """Save a confusion matrix and feature-importance chart."""
-
     fig, (axis_matrix, axis_importance) = plt.subplots(1, 2, figsize=(13, 5.5))
 
     image = axis_matrix.imshow(confusion_matrix, cmap="Blues")

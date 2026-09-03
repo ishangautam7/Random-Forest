@@ -13,12 +13,5 @@ dependencies = [
     "matplotlib>=3.8,<4",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8,<10"]
-
 [tool.setuptools.packages.find]
 include = ["random_forest_scratch*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"

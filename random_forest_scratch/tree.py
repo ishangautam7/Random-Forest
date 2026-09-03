@@ -1,9 +1,3 @@
-"""CART-style classification tree used by the Random Forest.
-
-This module intentionally implements the learning algorithm directly instead of
-wrapping scikit-learn. NumPy is used only for arrays and numerical operations.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,8 +11,6 @@ MaxFeatures = int | float | Literal["sqrt", "log2"] | None
 
 @dataclass(slots=True)
 class _TreeNode:
-    """One node in a binary decision tree."""
-
     predicted_class: int
     class_counts: np.ndarray
     feature_index: int | None = None
@@ -32,12 +24,6 @@ class _TreeNode:
 
 
 class DecisionTreeClassifier:
-    """A decision tree classifier trained with greedy Gini-impurity splits.
-
-    Parameters mirror the most useful parts of common ML libraries, but every
-    split, node, and prediction is implemented in this project.
-    """
-
     def __init__(
         self,
         *,
@@ -65,8 +51,6 @@ class DecisionTreeClassifier:
         self.random_state = random_state
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> DecisionTreeClassifier:
-        """Fit the tree and return ``self``."""
-
         X_array, y_array = _validate_training_data(X, y)
         classes, y_encoded = np.unique(y_array, return_inverse=True)
         self.classes_ = classes
@@ -79,8 +63,6 @@ class DecisionTreeClassifier:
         n_classes: int,
         classes: np.ndarray | None = None,
     ) -> DecisionTreeClassifier:
-        """Fit already-encoded targets (used internally by the forest)."""
-
         self.n_features_in_ = X.shape[1]
         self.n_classes_ = n_classes
         self.classes_ = np.arange(n_classes) if classes is None else classes
@@ -97,14 +79,10 @@ class DecisionTreeClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict the class label for each row."""
-
         encoded = self._predict_encoded(X)
         return self.classes_[encoded]
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Return class proportions from the leaf reached by each row."""
-
         X_array = self._validate_prediction_data(X)
         probabilities = np.empty((len(X_array), self.n_classes_), dtype=float)
         for row_index, row in enumerate(X_array):
@@ -113,8 +91,6 @@ class DecisionTreeClassifier:
         return probabilities
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Return mean classification accuracy."""
-
         y_array = np.asarray(y)
         if y_array.ndim != 1:
             raise ValueError("y must be a one-dimensional array")
@@ -147,7 +123,6 @@ class DecisionTreeClassifier:
         node.left = self._grow_tree(X[left_mask], y[left_mask], depth + 1)
         node.right = self._grow_tree(X[~left_mask], y[~left_mask], depth + 1)
 
-        # CART importance: samples reaching the node multiplied by Gini gain.
         self._raw_feature_importances[feature_index] += len(y) * gain
         return node
 
@@ -192,7 +167,6 @@ class DecisionTreeClassifier:
                 if gain > best_gain + 1e-12:
                     best_gain = gain
                     best_feature = int(feature_index)
-                    # This form is safer than (a + b) / 2 for large numbers.
                     lower = values[split_index]
                     upper = values[split_index + 1]
                     best_threshold = float(lower + (upper - lower) / 2.0)
@@ -212,10 +186,12 @@ class DecisionTreeClassifier:
     def _leaf_for_row(self, row: np.ndarray) -> _TreeNode:
         node = self.root_
         while not node.is_leaf:
-            if row[node.feature_index] <= node.threshold:  # type: ignore[index,operator]
-                node = node.left  # type: ignore[assignment]
-            else:
-                node = node.right  # type: ignore[assignment]
+            feature_index = node.feature_index
+            threshold = node.threshold
+            assert feature_index is not None and threshold is not None
+            next_node = node.left if row[feature_index] <= threshold else node.right
+            assert next_node is not None
+            node = next_node
         return node
 
     def _validate_prediction_data(self, X: np.ndarray) -> np.ndarray:
@@ -275,4 +251,3 @@ def _validate_training_data(
     if not np.all(np.isfinite(X_array)):
         raise ValueError("X must contain only finite values")
     return X_array, y_array
-

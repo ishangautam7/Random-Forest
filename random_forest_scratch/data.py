@@ -1,5 +1,3 @@
-"""Wine dataset loading and a dependency-free stratified train/test split."""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -32,8 +30,6 @@ DUPLICATE_ROWS_REMOVED = SOURCE_ROW_COUNT - MODELING_ROW_COUNT
 
 
 def download_wine_data(destination: str | Path) -> Path:
-    """Download the official UCI file and verify its SHA-256 digest."""
-
     output_path = Path(destination)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with urllib.request.urlopen(DATASET_URL, timeout=30) as response:
@@ -45,14 +41,11 @@ def download_wine_data(destination: str | Path) -> Path:
             "Downloaded dataset checksum did not match the expected official file"
         )
     output_path.write_bytes(content)
-    # Validate the content before reporting success.
     load_wine_data(output_path)
     return output_path
 
 
 def load_wine_data(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
-    """Load and validate UCI's red Wine Quality CSV file."""
-
     data = np.loadtxt(path, delimiter=";", skiprows=1, dtype=float)
     if data.ndim != 2 or data.shape[1] != 12:
         raise ValueError("Expected 12 columns: 11 features followed by wine quality")
@@ -63,9 +56,6 @@ def load_wine_data(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
     if not np.all(np.isfinite(data)):
         raise ValueError("Dataset contains missing or non-finite values")
 
-    # The source contains 240 exact duplicate records. Keeping identical copies
-    # on both sides of a random split would make test performance look better
-    # than it really is, so retain only each record's first occurrence.
     _, unique_indices = np.unique(data, axis=0, return_index=True)
     data = data[np.sort(unique_indices)]
     if len(data) != MODELING_ROW_COUNT:
@@ -87,8 +77,6 @@ def stratified_train_test_split(
     test_size: float = 0.2,
     random_state: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Split arrays while retaining approximately equal class proportions."""
-
     X_array = np.asarray(X)
     y_array = np.asarray(y)
     if X_array.ndim != 2 or y_array.ndim != 1 or len(X_array) != len(y_array):

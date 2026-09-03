@@ -1,5 +1,3 @@
-"""Random Forest classifier built from the project's own decision trees."""
-
 from __future__ import annotations
 
 from numbers import Integral, Real
@@ -10,12 +8,6 @@ from .tree import DecisionTreeClassifier, MaxFeatures, _validate_training_data
 
 
 class RandomForestClassifier:
-    """An ensemble of randomized classification trees.
-
-    Each tree learns from a bootstrap sample. At every node it considers only a
-    random subset of features. Final predictions use majority voting.
-    """
-
     def __init__(
         self,
         *,
@@ -45,8 +37,6 @@ class RandomForestClassifier:
         self.random_state = random_state
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> RandomForestClassifier:
-        """Train all trees and calculate optional out-of-bag accuracy."""
-
         X_array, y_array = _validate_training_data(X, y)
         self.classes_, y_encoded = np.unique(y_array, return_inverse=True)
         self.n_classes_ = len(self.classes_)
@@ -115,20 +105,14 @@ class RandomForestClassifier:
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict labels by majority vote across the trees."""
-
         votes = self._collect_votes(X)
         return self.classes_[np.argmax(votes, axis=1)]
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Return the fraction of trees voting for each class."""
-
         votes = self._collect_votes(X)
         return votes / self.n_estimators
 
     def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Return mean classification accuracy."""
-
         y_array = np.asarray(y)
         predictions = self.predict(X)
         if y_array.ndim != 1 or len(y_array) != len(predictions):
@@ -167,4 +151,3 @@ class RandomForestClassifier:
                 raise ValueError("float max_samples must be in (0, 1]")
             return max(1, int(round(float(self.max_samples) * n_samples)))
         raise ValueError("max_samples must be None, an int, or a float")
-

@@ -1,5 +1,3 @@
-"""Load the trained model and predict one red wine's quality score."""
-
 from __future__ import annotations
 
 import argparse
@@ -8,20 +6,25 @@ from pathlib import Path
 
 import numpy as np
 
+from random_forest_scratch.data import FEATURE_NAMES
+
+FEATURE_RANGES = (
+    "4.6-15.9",
+    "0.12-1.58",
+    "0-1",
+    "0.9-15.5",
+    "0.012-0.611",
+    "1-72",
+    "6-289",
+    "0.99007-1.00369",
+    "2.74-4.01",
+    "0.33-2",
+    "8.4-14.9",
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Predict one red wine's quality.")
-    parser.add_argument("fixed_acidity", type=float)
-    parser.add_argument("volatile_acidity", type=float)
-    parser.add_argument("citric_acid", type=float)
-    parser.add_argument("residual_sugar", type=float)
-    parser.add_argument("chlorides", type=float)
-    parser.add_argument("free_sulfur_dioxide", type=float)
-    parser.add_argument("total_sulfur_dioxide", type=float)
-    parser.add_argument("density", type=float)
-    parser.add_argument("ph", type=float)
-    parser.add_argument("sulphates", type=float)
-    parser.add_argument("alcohol", type=float)
     parser.add_argument("--model", type=Path, default=Path("artifacts/model.pkl"))
     return parser.parse_args()
 
@@ -34,22 +37,16 @@ def main() -> None:
     with args.model.open("rb") as model_file:
         model = pickle.load(model_file)
 
-    features = np.array(
-        [[
-            args.fixed_acidity,
-            args.volatile_acidity,
-            args.citric_acid,
-            args.residual_sugar,
-            args.chlorides,
-            args.free_sulfur_dioxide,
-            args.total_sulfur_dioxide,
-            args.density,
-            args.ph,
-            args.sulphates,
-            args.alcohol,
-        ]],
-        dtype=float,
-    )
+    try:
+        features = np.array(
+            [[
+                float(input(f"{label} ({value_range}): "))
+                for label, value_range in zip(FEATURE_NAMES, FEATURE_RANGES)
+            ]],
+            dtype=float,
+        )
+    except (EOFError, ValueError):
+        raise SystemExit("Enter a valid number for every feature.") from None
     predicted_class = int(model.predict(features)[0])
     probabilities = model.predict_proba(features)[0]
 

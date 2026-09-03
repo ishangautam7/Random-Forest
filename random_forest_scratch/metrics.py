@@ -1,5 +1,3 @@
-"""Evaluation helpers for multiclass classification."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -10,8 +8,6 @@ def confusion_matrix(
     y_pred: np.ndarray,
     labels: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Return a multiclass confusion matrix and its ordered labels."""
-
     true = np.asarray(y_true)
     predicted = np.asarray(y_pred)
     if true.ndim != 1 or predicted.ndim != 1 or len(true) != len(predicted):
@@ -40,8 +36,6 @@ def multiclass_classification_metrics(
     y_pred: np.ndarray,
     labels: np.ndarray | None = None,
 ) -> tuple[dict[str, float], np.ndarray, np.ndarray]:
-    """Calculate accuracy and macro-averaged precision, recall, and F1."""
-
     true = np.asarray(y_true)
     predicted = np.asarray(y_pred)
     matrix, ordered_labels = confusion_matrix(true, predicted, labels)
